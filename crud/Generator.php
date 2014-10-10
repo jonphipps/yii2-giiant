@@ -416,6 +416,7 @@ class Generator extends \yii\gii\generators\crud\Generator
 
     private function callProviderQueue($func, $args)
     {
+        Yii::beginProfile('ProviderQueue', __METHOD__);
         $this->initializeProviders(); // TODO: should be done on init, but providerList is empty
         //var_dump($this->_p);exit;
         $args = func_get_args();
@@ -423,9 +424,12 @@ class Generator extends \yii\gii\generators\crud\Generator
         // walk through providers
         foreach ($this->_p AS $obj) {
             if (method_exists($obj, $func)) {
+                fwrite(STDOUT,'~');
+                //fwrite(STDOUT, get_class($obj).'::'.$func.'->'.Json::encode($args)."\n");
                 $c = call_user_func_array(array(&$obj, $func), $args);
                 // until a provider returns not null
                 if ($c !== null) {
+                    fwrite(STDOUT,'*');
                     if (is_object($args)) {
                         $argsString = get_class($args);
                     } elseif (is_array($args)) {
@@ -439,6 +443,8 @@ class Generator extends \yii\gii\generators\crud\Generator
                 }
             }
         }
+        fwrite(STDOUT,'.');
+        Yii::endProfile('ProviderQueue', __METHOD__);
     }
 
     private function shorthandAttributeFormat($attribute)
