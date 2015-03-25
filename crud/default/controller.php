@@ -33,22 +33,64 @@ use yii\web\HttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\helpers\Url;
+use dmstr\bootstrap\Tabs;
 
 /**
  * <?= $controllerClass ?> implements the CRUD actions for <?= $modelClass ?> model.
  */
 class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->baseControllerClass) . "\n" ?>
 {
+    /**
+     * @var boolean whether to enable CSRF validation for the actions in this controller.
+     * CSRF validation is enabled only when both this property and [[Request::enableCsrfValidation]] are true.
+     */
+    public $enableCsrfValidation = false;
+
+	/**
+	 * @inheritdoc
+	 */
+	public function behaviors()
+	{
+		return [
+			'access' => [
+				'class' => AccessControl::className(),
+				'rules' => [
+					[
+						'allow' 	=> true,
+						'actions'   => ['index', 'view', 'create', 'update', 'delete'],
+						'roles'     => ['@']
+					]
+				]
+			]
+		];
+	}
+
+    /**
+     * @inheritdoc
+     */
+    public function beforeAction($action)
+    {
+        if (parent::beforeAction($action)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 	/**
 	 * Lists all <?= $modelClass ?> models.
 	 * @return mixed
 	 */
 	public function actionIndex()
 	{
-		$searchModel = new <?= isset($searchModelAlias) ? $searchModelAlias : $searchModelClass ?>;
+		$searchModel  = new <?= isset($searchModelAlias) ? $searchModelAlias : $searchModelClass ?>;
 		$dataProvider = $searchModel->search($_GET);
 
+		Tabs::clearLocalStorage();
+
         Url::remember();
+        \Yii::$app->session['__crudReturnUrl'] = null;
+
 		return $this->render('index', [
 			'dataProvider' => $dataProvider,
 			'searchModel' => $searchModel,
@@ -58,11 +100,18 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
 	/**
 	 * Displays a single <?= $modelClass ?> model.
 	 * <?= implode("\n\t * ", $actionParamComments) . "\n" ?>
+     *
 	 * @return mixed
 	 */
 	public function actionView(<?= $actionParams ?>)
 	{
-        Url::remember();
+        $resolved = \Yii::$app->request->resolve();
+        $resolved[1]['_pjax'] = null;
+        $url = Url::to(array_merge(['/'.$resolved[0]],$resolved[1]));
+        \Yii::$app->session['__crudReturnUrl'] = Url::previous();
+        Url::remember($url);
+        Tabs::rememberActiveState();
+
         return $this->render('view', [
 			'model' => $this->findModel(<?= $actionParams ?>),
 		]);
@@ -87,7 +136,7 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
             $msg = (isset($e->errorInfo[2]))?$e->errorInfo[2]:$e->getMessage();
             $model->addError('_exception', $msg);
 		}
-        return $this->render('create', ['model' => $model,]);
+        return $this->render('create', ['model' => $model]);
 	}
 
 	/**
@@ -101,7 +150,7 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
 		$model = $this->findModel(<?= $actionParams ?>);
 
 		if ($model->load($_POST) && $model->save()) {
-            return $this->redirect(Url::previous());
+            $this->redirect(Url::previous());
 		} else {
 			return $this->render('update', [
 				'model' => $model,
@@ -117,8 +166,27 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
 	 */
 	public function actionDelete(<?= $actionParams ?>)
 	{
-		$this->findModel(<?= $actionParams ?>)->delete();
-		return $this->redirect(Url::previous());
+        try {
+            $this->findModel(<?= $actionParams ?>)->delete();
+        } catch (\Exception $e) {
+            $msg = (isset($e->errorInfo[2]))?$e->errorInfo[2]:$e->getMessage();
+            \Yii::$app->getSession()->setFlash('error', $msg);
+            return $this->redirect(Url::previous());
+        }
+
+        // TODO: improve detection
+        $isPivot = strstr('<?= $actionParams ?>',',');
+        if ($isPivot == true) {
+            $this->redirect(Url::previous());
+        } elseif (isset(\Yii::$app->session['__crudReturnUrl']) && \Yii::$app->session['__crudReturnUrl'] != '/') {
+			Url::remember(null);
+			$url = \Yii::$app->session['__crudReturnUrl'];
+			\Yii::$app->session['__crudReturnUrl'] = null;
+
+			$this->redirect($url);
+        } else {
+            $this->redirect(['index']);
+        }
 	}
 
 	/**

@@ -121,10 +121,11 @@ class Generator extends \yii\gii\generators\model\Generator
                 'labels'      => $this->generateLabels($tableSchema),
                 'rules'       => $this->generateRules($tableSchema),
                 'relations'   => isset($relations[$className]) ? $relations[$className] : [],
+                'ns'          => $this->ns,
             ];
 
             $files[] = new CodeFile(
-                Yii::getAlias('@' . str_replace('\\', '/', $this->ns)) . '/base/' . $className . 'Base.php',
+                Yii::getAlias('@' . str_replace('\\', '/', $this->ns)) . '/base/' . $className . '.php',
                 $this->render('model.php', $params)
             );
 

@@ -15,6 +15,7 @@ echo "<?php\n";
 ?>
 
 use yii\helpers\Html;
+use yii\helpers\Url;
 use <?= $generator->indexWidgetType === 'grid' ? "yii\\grid\\GridView" : "yii\\widgets\\ListView" ?>;
 
 /**
@@ -23,7 +24,7 @@ use <?= $generator->indexWidgetType === 'grid' ? "yii\\grid\\GridView" : "yii\\w
 * @var <?= ltrim($generator->searchModelClass, '\\') ?> $searchModel
 */
 
-$this->title = '<?= Inflector::pluralize(Inflector::camel2words(StringHelper::basename($generator->modelClass))) ?>';
+    $this->title = '<?= Inflector::pluralize(Inflector::camel2words(StringHelper::basename($generator->modelClass))) ?>';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
@@ -36,7 +37,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <div class="clearfix">
         <p class="pull-left">
-            <?= "<?= " ?>Html::a('<span class="glyphicon glyphicon-plus"></span> New <?= Inflector::camel2words(StringHelper::basename($generator->modelClass)) ?>', ['create'], ['class' => 'btn btn-success']) ?>
+            <?= "<?= " ?>Html::a('<span class="glyphicon glyphicon-plus"></span> ' . <?= $generator->generateString('New') ?> . ' <?= Inflector::camel2words(StringHelper::basename($generator->modelClass)) ?>', ['create'], ['class' => 'btn btn-success']) ?>
         </p>
 
         <div class="pull-right">
@@ -67,12 +68,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 ?>
             <?php endforeach; ?>
 
-            <?= "<?php \n" ?>
-            echo \yii\bootstrap\ButtonDropdown::widget(
+            <?= "<?= \n" ?>
+            \yii\bootstrap\ButtonDropdown::widget(
                 [
                     'id'       => 'giiant-relations',
                     'encodeLabel' => false,
-                    'label'    => '<span class="glyphicon glyphicon-paperclip"></span> Relations',
+                    'label'    => '<span class="glyphicon glyphicon-paperclip"></span> ' . <?= $generator->generateString('Relations') ?>,
                     'dropdown' => [
                         'options'      => [
                             'class' => 'dropdown-menu-right'
@@ -87,13 +88,39 @@ $this->params['breadcrumbs'][] = $this->title;
     </div>
 
     <?php if ($generator->indexWidgetType === 'grid'): ?>
-        <?= "<?php " ?>echo GridView::widget([
+
+        <div class="table-responsive">
+        <?= "<?= " ?>GridView::widget([
+        'layout' => '{summary}{pager}{items}{pager}',
         'dataProvider' => $dataProvider,
+        'pager'        => [
+            'class'          => yii\widgets\LinkPager::className(),
+            'firstPageLabel' => <?= $generator->generateString('First') ?>,
+            'lastPageLabel'  => <?= $generator->generateString('Last') ?>
+        ],
         'filterModel' => $searchModel,
         'columns' => [
+
         <?php
+        $actionButtonColumn = <<<PHP
+[
+    'class' => '{$generator->actionButtonClass}',
+    'urlCreator' => function(\$action, \$model, \$key, \$index) {
+        // using the column name as key, not mapping to 'id' like the standard generator
+        \$params = is_array(\$key) ? \$key : [\$model->primaryKey()[0] => (string) \$key];
+        \$params[0] = \Yii::\$app->controller->id ? \Yii::\$app->controller->id . '/' . \$action : \$action;
+        return Url::toRoute(\$params);
+    },
+    'contentOptions' => ['nowrap'=>'nowrap']
+],
+PHP;
+
+        // action buttons first
+        echo $actionButtonColumn;
+
         $count = 0;
         echo "\n"; // code-formatting
+
         foreach ($generator->getTableSchema()->columns as $column) {
             $format = trim($generator->columnFormat($column,$model));
             if ($format == false) continue;
@@ -103,27 +130,22 @@ $this->params['breadcrumbs'][] = $this->title;
                 echo "\t\t\t/*{$format}*/\n";
             }
         }
+
         ?>
-            [
-                'class' => '<?= $generator->actionButtonClass ?>',
-                'urlCreator' => function($action, $model, $key, $index) {
-                    // using the column name as key, not mapping to 'id' like the standard generator
-                    $params = is_array($key) ? $key : [$model->primaryKey()[0] => (string) $key];
-                    $params[0] = \Yii::$app->controller->id ? \Yii::$app->controller->id . '/' . $action : $action;
-                    return \yii\helpers\Url::toRoute($params);
-                },
-                'contentOptions' => ['nowrap'=>'nowrap']
-            ],
         ],
     ]); ?>
+        </div>
+
     <?php else: ?>
-        <?= "<?php " ?>echo ListView::widget([
+
+        <?= "<?= " ?> ListView::widget([
         'dataProvider' => $dataProvider,
         'itemOptions' => ['class' => 'item'],
         'itemView' => function ($model, $key, $index, $widget) {
         return Html::a(Html::encode($model-><?= $nameAttribute ?>), ['view', <?= $urlParams ?>]);
         },
         ]); ?>
+
     <?php endif; ?>
 
 </div>

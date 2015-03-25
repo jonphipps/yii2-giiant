@@ -14,9 +14,11 @@ echo "<?php\n";
 ?>
 
 use yii\helpers\Html;
+use yii\helpers\Url;
 use yii\grid\GridView;
 use yii\widgets\DetailView;
 use yii\widgets\Pjax;
+use dmstr\bootstrap\Tabs;
 
 /**
 * @var yii\web\View $this
@@ -26,31 +28,36 @@ use yii\widgets\Pjax;
 $this->title = '<?=
 Inflector::camel2words(
     StringHelper::basename($generator->modelClass)
-) ?> View ' . $model-><?= $generator->getNameAttribute() ?> . '';
+) ?> ' . $model-><?= $generator->getNameAttribute() ?>;
 $this->params['breadcrumbs'][] = ['label' => '<?=
 Inflector::pluralize(
     Inflector::camel2words(StringHelper::basename($generator->modelClass))
 ) ?>', 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => (string)$model-><?=$generator->getNameAttribute() ?>, 'url' => ['view', <?= $urlParams ?>]];
-$this->params['breadcrumbs'][] = 'View';
+$this->params['breadcrumbs'][] = <?= $generator->generateString('View') ?>;
 ?>
 <div class="<?= Inflector::camel2id(StringHelper::basename($generator->modelClass), '-', true) ?>-view">
 
+    <!-- menu buttons -->
     <p class='pull-left'>
-        <?= "<?= " ?>Html::a('<span class="glyphicon glyphicon-pencil"></span> Edit', ['update', <?= $urlParams ?>],
-        ['class' => 'btn btn-info']) ?>
-        <?= "<?= " ?>Html::a('<span class="glyphicon glyphicon-plus"></span> New <?=
-        Inflector::camel2words(
-            StringHelper::basename($generator->modelClass)
-        ) ?>', ['create'], ['class' => 'btn
-        btn-success']) ?>
+        <?= "<?= " ?>Html::a('<span class="glyphicon glyphicon-list"></span> ' . <?= $generator->generateString('List') ?>, ['index'], ['class'=>'btn btn-default']) ?>
+        <?= "<?= " ?>Html::a('<span class="glyphicon glyphicon-pencil"></span> ' . <?= $generator->generateString('Edit') ?>, ['update', <?= $urlParams ?>],['class' => 'btn btn-info']) ?>
+        <?= "<?= " ?>Html::a('<span class="glyphicon glyphicon-plus"></span> ' . <?= $generator->generateString('New') ?> . '
+        <?= Inflector::camel2words(StringHelper::basename($generator->modelClass)) ?>', ['create'], ['class' => 'btn btn-success']) ?>
     </p>
 
-    <?php
-    echo "    <p class='pull-right'>\n";
-    echo "        <?= Html::a('<span class=\"glyphicon glyphicon-list\"></span> List', ['index'], ['class'=>'btn btn-default']) ?>\n";
-    echo "    </p><div class='clearfix'></div> \n";
-    ?>
+    <div class="clearfix"></div>
+
+    <!-- flash message -->
+    <?= "<?php if (\\Yii::\$app->session->getFlash('deleteError') !== null) : ?>
+        <span class=\"alert alert-info alert-dismissible\" role=\"alert\">
+            <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\">
+            <span aria-hidden=\"true\">&times;</span></button>
+            <?= \\Yii::\$app->session->getFlash('deleteError') ?>
+        </span>
+    <?php endif; ?>" ?>
+
+
 
     <?php $label = StringHelper::basename($generator->modelClass); ?>
 
@@ -63,7 +70,7 @@ $this->params['breadcrumbs'][] = 'View';
     echo "<?php \$this->beginBlock('{$generator->modelClass}'); ?>\n";
     ?>
 
-    <?= "<?php " ?>echo DetailView::widget([
+    <?= "<?= " ?>DetailView::widget([
     'model' => $model,
     'attributes' => [
     <?php
@@ -81,14 +88,13 @@ $this->params['breadcrumbs'][] = 'View';
 
     <hr/>
 
-    <?= "<?php " ?>echo Html::a('<span class="glyphicon glyphicon-trash"></span> Delete', ['delete', <?= $urlParams ?>],
+    <?= "<?= " ?>Html::a('<span class="glyphicon glyphicon-trash"></span> ' . <?= $generator->generateString('Delete') ?>, ['delete', <?= $urlParams ?>],
     [
     'class' => 'btn btn-danger',
-    'data-confirm' => Yii::t('app', 'Are you sure to delete this item?'),
+    'data-confirm' => '' . <?= $generator->generateString('Are you sure to delete this item?') ?> . '',
     'data-method' => 'post',
     ]); ?>
-
-    <?php echo "<?php \$this->endBlock(); ?>\n\n"; ?>
+    <?= "<?php \$this->endBlock(); ?>\n\n"; ?>
 
     <?php
     $items = <<<EOS
@@ -112,8 +118,8 @@ EOS;
             $pivotRelation = $model->{'get' . $pivotName}();
             $pivotPk       = key($pivotRelation->link);
 
-            $addButton = "  <?= \\yii\\helpers\\Html::a(
-            '<span class=\"glyphicon glyphicon-link\"></span> Attach " .
+            $addButton = "  <?= Html::a(
+            '<span class=\"glyphicon glyphicon-link\"></span> ' . " . $generator->generateString('Attach') . " . ' " .
                 Inflector::singularize(Inflector::camel2words($name)) .
                 "', ['" . $generator->createRelationRoute($pivotRelation, 'create') . "', '" .
                 Inflector::singularize($pivotName) . "'=>['" . key(
@@ -126,25 +132,25 @@ EOS;
         }
 
         // relation list, add, create buttons
-        echo "<p class='pull-right'>\n";
+        echo "<div style='position: relative'><div style='position:absolute; right: 0px; top 0px;'>\n";
 
-        echo "  <?= \\yii\\helpers\\Html::a(
-            '<span class=\"glyphicon glyphicon-list\"></span> List All " .
+        echo "  <?= Html::a(
+            '<span class=\"glyphicon glyphicon-list\"></span> ' . " . $generator->generateString('List All') . " . ' " .
             Inflector::camel2words($name) . "',
             ['" . $generator->createRelationRoute($relation, 'index') . "'],
             ['class'=>'btn text-muted btn-xs']
         ) ?>\n";
         // TODO: support multiple PKs, VarDumper?
-        echo "  <?= \\yii\\helpers\\Html::a(
-            '<span class=\"glyphicon glyphicon-plus\"></span> New " .
+        echo "  <?= Html::a(
+            '<span class=\"glyphicon glyphicon-plus\"></span> ' . " . $generator->generateString('New') . " . ' " .
             Inflector::singularize(Inflector::camel2words($name)) . "',
             ['" . $generator->createRelationRoute($relation, 'create') . "', '" .
-            Inflector::singularize($name) . "'=>['" . key($relation->link) . "'=>\$model->" . $model->primaryKey()[0] . "]],
+            Inflector::singularize($name) . "' => ['" . key($relation->link) . "' => \$model->" . $model->primaryKey()[0] . "]],
             ['class'=>'btn btn-success btn-xs']
-        ) ?>\n";
+        ); ?>\n";
         echo $addButton;
 
-        echo "</p><div class='clearfix'></div>\n";
+        echo "</div></div>";#<div class='clearfix'></div>\n";
 
         // render pivot grid
         if ($relation->via !== null) {
@@ -157,11 +163,11 @@ EOS;
             $gridName     = $name;
         }
 
-        $output = $generator->relationGrid([$gridRelation, $gridName, $showAllRecords]);
+        $output = $generator->relationGrid($gridName, $gridRelation, $showAllRecords);
 
         // render relation grid
         if (!empty($output)):
-            echo "<?php Pjax::begin(['id'=>'pjax-{$name}','linkSelector'=>'#pjax-{$name} ul.pagination a']) ?>\n";
+            echo "<?php Pjax::begin(['id'=>'pjax-{$name}', 'enableReplaceState'=> false, 'linkSelector'=>'#pjax-{$name} ul.pagination a, th a', 'clientOptions' => ['pjax:success'=>'function(){alert(\"yo\")}']]) ?>\n";
             echo "<?= " . $output . "?>\n";
             echo "<?php Pjax::end() ?>\n";
         endif;
@@ -182,8 +188,7 @@ EOS;
 
     <?=
     // render tabs
-    "<?=
-    \yii\bootstrap\Tabs::widget(
+    "<?= Tabs::widget(
                  [
                      'id' => 'relation-tabs',
                      'encodeLabels' => false,

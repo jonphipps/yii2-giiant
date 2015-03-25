@@ -19,17 +19,25 @@ echo "<?php\n";
 
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
+use \dmstr\bootstrap\Tabs;
 
 /**
 * @var yii\web\View $this
 * @var <?= ltrim($generator->modelClass, '\\') ?> $model
 * @var yii\widgets\ActiveForm $form
 */
+
 ?>
 
 <div class="<?= \yii\helpers\Inflector::camel2id(StringHelper::basename($generator->modelClass), '-', true) ?>-form">
 
-    <?= "<?php " ?>$form = ActiveForm::begin(['layout' => '<?= $generator->formLayout ?>', 'enableClientValidation' => false]); ?>
+    <?= "<?php " ?>$form = ActiveForm::begin([
+                        'id'     => '<?= $model->formName() ?>',
+                        'layout' => '<?= $generator->formLayout ?>',
+                        'enableClientValidation' => false,
+                    ]
+                );
+    ?>
 
     <div class="">
         <?= "<?php " ?>echo $form->errorSummary($model); ?>
@@ -44,13 +52,13 @@ use yii\bootstrap\ActiveForm;
                 $append = $generator->appendActiveField($column, $model);
 
                 if ($prepend) {
-                    echo "\n\t\t\t<?= " . $prepend . " ?>";
+                    echo "\n\t\t\t<?php " . $prepend . " ?>";
                 }
                 if ($field) {
                     echo "\n\t\t\t<?= " . $field . " ?>";
                 }
                 if ($append) {
-                    echo "\n\t\t\t<?= " . $append . " ?>";
+                    echo "\n\t\t\t<?php " . $append . " ?>";
                 }
             } ?>
 
@@ -71,7 +79,7 @@ EOS;
 
         <?=
         "<?=
-    \yii\bootstrap\Tabs::widget(
+    Tabs::widget(
                  [
                    'encodeLabels' => false,
                      'items' => [ $items ]
@@ -82,8 +90,16 @@ EOS;
 
         <hr/>
 
-        <?= "<?= " ?>Html::submitButton('<span class="glyphicon glyphicon-check"></span> '.($model->isNewRecord ? 'Create' : 'Save'), ['class' => $model->isNewRecord ?
-        'btn btn-primary' : 'btn btn-primary']) ?>
+        <?= "<?= " ?>Html::submitButton(
+                '<span class="glyphicon glyphicon-check"></span> ' . ($model->isNewRecord
+                            ? <?= $generator->generateString('Create') ?> : <?= $generator->generateString('Save') ?>),
+                [
+                    'id'    => 'save-' . $model->formName(),
+                    'class' => 'btn btn-success'
+                ]
+            );
+        ?>
+
 
         <?= "<?php " ?>ActiveForm::end(); ?>
 

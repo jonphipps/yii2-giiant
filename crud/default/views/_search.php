@@ -39,8 +39,8 @@ foreach ($generator->getTableSchema()->getColumnNames() as $attribute) {
 }
 ?>
 		<div class="form-group">
-			<?= "<?= " ?>Html::submitButton('Search', ['class' => 'btn btn-primary']) ?>
-			<?= "<?= " ?>Html::resetButton('Reset', ['class' => 'btn btn-default']) ?>
+			<?= "<?= " ?>Html::submitButton(<?= $generator->generateString('Search') ?>, ['class' => 'btn btn-primary']) ?>
+			<?= "<?= " ?>Html::resetButton(<?= $generator->generateString('Reset') ?>, ['class' => 'btn btn-default']) ?>
 		</div>
 
 	<?= "<?php " ?>ActiveForm::end(); ?>
